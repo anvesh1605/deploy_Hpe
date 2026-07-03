@@ -6,6 +6,10 @@ outputs_*/
 outputs*/
 Data/
 _bundle_models_used_fullbackend/
+release_notes_4100i_cleaned/
+product_question_tests/
+product_lstm_v2/
+outputs_product_lstm_v2/
 models_bundle.zip
 models_used_bundle_*.zip
 *.pt
