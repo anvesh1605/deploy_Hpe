@@ -25,6 +25,7 @@ models_used_bundle_*.zip
 *.pkl
 *.jsonl
 *.pdf
+*.pyc
 *.log
 .env
 .env.local

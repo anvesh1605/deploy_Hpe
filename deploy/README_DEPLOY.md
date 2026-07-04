@@ -11,6 +11,7 @@ uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
 If `PORT` is not provided by the platform, the app falls back to `8000` when started locally.
+Deploy the backend before the frontend so the UI has a live API to talk to.
 
 Set backend environment variables as needed:
 
@@ -39,13 +40,15 @@ Notes:
 Deploy the frontend separately from the backend.
 
 - Configure the frontend API URL before deployment.
-- The frontend reads a runtime API base URL and falls back to same-origin requests when nothing is configured.
+- Set `VITE_API_BASE_URL` to the deployed backend URL.
+- The frontend falls back to same-origin requests when nothing is configured.
 - Rebuild or redeploy the frontend after setting the API URL value.
-- For static hosting, set the backend URL through a runtime global or the `api-base-url` meta tag.
+- The frontend does not need models or data files.
+- The frontend only talks to the backend.
 
 Frontend API configuration example:
 
-- `API_BASE_URL`
+- `VITE_API_BASE_URL`
 
 ## Exclusions
 

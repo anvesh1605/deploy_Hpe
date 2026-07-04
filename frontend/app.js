@@ -1,3 +1,8 @@
+const savedTheme = localStorage.getItem("aruba-qa-theme");
+if (savedTheme) {
+  document.documentElement.setAttribute("data-theme", savedTheme);
+}
+
 const ACTIVE_CONVERSATION_KEY = "aruba-qa-active-conversation";
 const API_BASE_URL = (() => {
   const metaBase = document.querySelector('meta[name="api-base-url"]')?.content || "";
@@ -32,6 +37,10 @@ const els = {
   domainSelect: $("domainSelect"),
   debugToggle: $("debugToggle"),
   newConversationBtn: $("newConversationBtn"),
+  themeToggle: $("themeToggle"),
+  mobileMenuToggle: $("mobileMenuToggle"),
+  sidebarOverlay: $("sidebarOverlay"),
+  sidebar: $("sidebar"),
 };
 
 const EXAMPLES = [
@@ -216,9 +225,10 @@ function renderSidebarContext() {
 function updateUiState() {
   const hasQuestion = Boolean(els.questionInput.value.trim());
   els.sendBtn.disabled = state.chatBusy || !hasQuestion;
-  els.sendBtn.textContent = state.chatBusy ? "Thinking..." : "Ask";
-  els.hintText.textContent =
-    "Press Enter to send. Shift+Enter adds a new line. Chats are saved automatically.";
+  if (els.hintText) {
+    els.hintText.textContent =
+      "Press Enter to send. Shift+Enter adds a new line. Chats are saved automatically.";
+  }
   renderContextBadges();
   renderSidebarContext();
 }
@@ -244,12 +254,45 @@ function renderExamples() {
 function renderEmptyState() {
   els.chatFeed.innerHTML = `
     <div class="empty-state">
-      <h2>Start a conversation</h2>
-      <ul>
-        <li>Ask about bugs, workarounds, commands, or product documentation.</li>
-        <li>Chats are saved automatically and can be reopened from the sidebar.</li>
-        <li>Switching chats keeps the full conversation context intact.</li>
-      </ul>
+      <div class="empty-state-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <h2 class="empty-state-title">Welcome to HPE Aruba Intelligence</h2>
+      <p class="empty-state-subtitle">Your AI-powered assistant for network operations.</p>
+      
+      <div class="empty-state-features">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          </div>
+          <div class="feature-text">
+            <h3>Instant Answers</h3>
+            <p>Ask about bugs, workarounds, commands, or product documentation.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          </div>
+          <div class="feature-text">
+            <h3>Auto-saved Context</h3>
+            <p>Chats are saved automatically and can be reopened from the sidebar.</p>
+          </div>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          </div>
+          <div class="feature-text">
+            <h3>Seamless Switching</h3>
+            <p>Switching chats keeps the full conversation context intact.</p>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -266,9 +309,9 @@ function renderMessages(messages) {
       message.content || "",
       message.role === "assistant" && state.showDebug
         ? [
-            { label: message.predicted_intent || "intent", kind: "warn" },
-            { label: message.answer_source || "source", kind: "good" },
-          ]
+          { label: message.predicted_intent || "intent", kind: "warn" },
+          { label: message.answer_source || "source", kind: "good" },
+        ]
         : null,
       state.showDebug && message.role === "assistant" ? message.debug || null : null
     );
@@ -354,7 +397,7 @@ function renderConversationList() {
           </button>
           <div class="conversation-actions">
             <button type="button" class="conversation-action" data-rename-conversation="${escapeHtml(conversation.id)}">Rename</button>
-            <button type="button" class="conversation-action" data-delete-conversation="${escapeHtml(conversation.id)}">Delete</button>
+            <button type="button" class="conversation-action conversation-action--danger" data-delete-conversation="${escapeHtml(conversation.id)}">Delete</button>
           </div>
         </div>
       `;
@@ -616,6 +659,34 @@ function wireEvents() {
       persistConversationContext().catch(console.error);
     });
   });
+
+  if (els.themeToggle) {
+    els.themeToggle.addEventListener("click", () => {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute("data-theme");
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      html.setAttribute("data-theme", newTheme);
+      localStorage.setItem("aruba-qa-theme", newTheme);
+    });
+  }
+
+  if (els.mobileMenuToggle && els.sidebar && els.sidebarOverlay) {
+    els.mobileMenuToggle.addEventListener("click", () => {
+      const isOpen = els.sidebar.classList.contains("open");
+      if (isOpen) {
+        els.sidebar.classList.remove("open");
+        els.sidebarOverlay.classList.remove("open");
+      } else {
+        els.sidebar.classList.add("open");
+        els.sidebarOverlay.classList.add("open");
+      }
+    });
+
+    els.sidebarOverlay.addEventListener("click", () => {
+      els.sidebar.classList.remove("open");
+      els.sidebarOverlay.classList.remove("open");
+    });
+  }
 
   els.newConversationBtn.addEventListener("click", async () => {
     const conversation = await createConversation();

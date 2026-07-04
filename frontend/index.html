@@ -1,98 +1,161 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="api-base-url" content="" />
-    <title>Aruba QA Console</title>
-    <link rel="stylesheet" href="/frontend/styles.css" />
-    <script type="module" src="/frontend/app.js"></script>
-  </head>
-  <body>
-    <div class="bg-orb orb-a"></div>
-    <div class="bg-orb orb-b"></div>
-    <div class="bg-grid"></div>
+<html lang="en" data-theme="dark">
 
-    <div class="app-shell">
-      <aside class="sidebar panel">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="HPE Aruba Intelligence — AI-powered assistant for release notes, product documentation, and troubleshooting for HPE Aruba Networking switches." />
+  <meta name="color-scheme" content="dark light" />
+  <title>HPE Aruba Intelligence</title>
+  <link rel="stylesheet" href="/frontend/styles.css" />
+</head>
+
+<body>
+  <!-- Accessibility: Skip to main content -->
+  <a href="#chatFeed" class="skip-link">Skip to chat</a>
+
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true"></div>
+
+  <div class="app-shell">
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside id="sidebar" class="sidebar" role="complementary" aria-label="Sidebar navigation">
+      <div class="sidebar-header">
         <div class="brand">
-          <div class="brand-mark">A</div>
-          <div>
-            <div class="brand-title">Aruba QA Console</div>
-            <div class="brand-subtitle">Local release + product assistant</div>
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div class="brand-text">
+            <div class="brand-title">HPE Aruba Intelligence</div>
+            <div class="brand-subtitle">Smart Answers for Complex Networks</div>
           </div>
         </div>
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme"
+          title="Toggle dark/light theme">
+          <!-- Sun icon (shown in light mode) -->
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+          <!-- Moon icon (shown in dark mode) -->
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      </div>
 
-        <button id="newConversationBtn" class="primary-btn">New Conversation</button>
+      <div class="sidebar-actions">
+        <button id="newConversationBtn" class="btn-new-conversation" type="button" aria-label="Create new conversation">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New Conversation
+        </button>
+      </div>
 
-        <section class="sidebar-section">
-          <div class="section-title">Conversations</div>
-          <div id="conversationList" class="conversation-list"></div>
+      <div class="sidebar-body">
+        <section class="sidebar-section" aria-label="Conversations">
+          <div class="section-label">Conversations</div>
+          <div id="conversationList" class="conversation-list" role="list"></div>
         </section>
 
-        <section class="sidebar-section">
-          <div class="section-title">Quick Prompts</div>
-          <div id="exampleList" class="example-list"></div>
+        <section class="sidebar-section" aria-label="Quick prompts">
+          <div class="section-label">Quick Prompts</div>
+          <div id="exampleList" class="example-list" role="list"></div>
         </section>
+      </div>
 
-        <section class="sidebar-section">
-          <div class="section-title">Active Context</div>
-          <div id="contextBadges" class="badge-row"></div>
-        </section>
-      </aside>
+      <div class="sidebar-footer">
+        <div class="section-label">Context</div>
+        <div id="contextBadges" class="badge-row"></div>
+      </div>
+    </aside>
 
-      <main class="main-area">
-        <section class="panel context-panel">
-          <div class="context-grid">
-            <label class="field">
-              <span>Switch *</span>
-              <select id="switchSelect">
-                <option value="">Select switch</option>
-                <option>4100i</option>
-                <option>6100</option>
-                <option>6200</option>
-                <option>6300</option>
-                <option>6400</option>
-                <option>8325</option>
-                <option>8360</option>
-                <option>8400</option>
-                <option value="10000">CX10000</option>
-              </select>
-            </label>
-            <label class="field">
-              <span>Domain</span>
-              <select id="domainSelect">
-                <option value="auto">Auto</option>
-                <option value="release">Release Notes</option>
-                <option value="product">Product Docs</option>
-              </select>
-            </label>
-          </div>
+    <!-- ==================== MAIN AREA ==================== -->
+    <main class="main-area" role="main">
+      <!-- Context Bar -->
+      <section class="context-panel" aria-label="Configuration">
+        <!-- Mobile hamburger -->
+        <button id="mobileMenuToggle" class="mobile-menu-toggle" type="button" aria-label="Open sidebar menu"
+          aria-expanded="false" aria-controls="sidebar">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
 
-          <div class="context-row">
-            <div id="activeContext" class="badge-row"></div>
-            <label class="toggle">
-              <input id="debugToggle" type="checkbox" />
-              <span>Show debug</span>
-            </label>
-          </div>
-        </section>
+        <div class="context-grid">
+          <label class="field" id="field-switch">
+            <span class="field-label">Switch</span>
+            <select id="switchSelect" aria-label="Select switch model">
+              <option value="">Select switch</option>
+              <option>4100i</option>
+              <option>6100</option>
+              <option>6200</option>
+              <option>6300</option>
+              <option>6400</option>
+              <option>8325</option>
+              <option>8360</option>
+              <option>8400</option>
+              <option value="10000">CX10000</option>
+            </select>
+          </label>
+          <label class="field" id="field-domain">
+            <span class="field-label">Domain</span>
+            <select id="domainSelect" aria-label="Select documentation domain">
+              <option value="auto">Auto</option>
+              <option value="release">Release Notes</option>
+              <option value="product">Product Docs</option>
+            </select>
+          </label>
+        </div>
 
-        <section class="chat-panel panel">
-          <div id="chatFeed" class="chat-feed"></div>
-          <form id="chatForm" class="composer">
-            <textarea
-              id="questionInput"
-              rows="3"
-              placeholder="Ask about a bug, command, limitation, workaround, or troubleshooting step..."
-            ></textarea>
-            <div class="composer-row">
-              <div id="hintText" class="hint-text">Select a switch to enable asking a question.</div>
-              <button id="sendBtn" class="primary-btn" type="submit" disabled>Ask</button>
+        <div class="context-meta">
+          <div id="activeContext" class="badge-row context-badges"></div>
+          <label class="toggle" id="debugToggleLabel">
+            <input id="debugToggle" type="checkbox" aria-label="Toggle debug information" />
+            <span class="toggle-switch" aria-hidden="true"></span>
+            <span>Debug</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Chat -->
+      <section class="chat-panel" aria-label="Chat conversation">
+        <div id="chatFeed" class="chat-feed" role="log" aria-live="polite" aria-label="Chat messages"></div>
+        <form id="chatForm" class="composer" autocomplete="off">
+          <div class="composer-inner">
+            <div class="composer-input-wrap">
+              <textarea id="questionInput" rows="1"
+                placeholder="Ask about a bug, command, limitation, workaround, or troubleshooting step…"
+                aria-label="Type your question"></textarea>
+              <button id="sendBtn" class="btn-send" type="submit" disabled aria-label="Send message">Send
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
             </div>
-          </form>
-        </section>
-      </main>
-    </div>
-  </body>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/frontend/app.js"></script>
+</body>
+
 </html>
