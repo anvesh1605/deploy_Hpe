@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 
 import torch
 
+from backend.config import QWEN_FINALIZE_ALL_RESPONSES
 from lstm_lookup import (
     DATA_NOT_AVAILABLE_RESPONSE,
     check_data_availability,
@@ -578,6 +579,7 @@ def answer_question(
     qwen_model,
     device: torch.device,
     session_context: Dict[str, Optional[str]],
+    override_intent: Optional[str] = None,
 ) -> Dict[str, object]:
     cleaned_question = normalize_whitespace(question)
     routing_question = normalize_question_for_routing(cleaned_question)
@@ -595,6 +597,9 @@ def answer_question(
     session_bug_id = get_session_bug_id(session_context)
     availability_check = check_data_availability(slots, availability_index, bug_metadata_index)
     lstm_predicted_intent = predict_intent(routing_question, lstm_model, lstm_tokenizer, lstm_config, device)
+    override_intent = normalize_whitespace(override_intent)
+    if override_intent:
+        lstm_predicted_intent = override_intent
     predicted_intent = lstm_predicted_intent
 
     if looks_like_bare_bug_id(routing_question) and not slots.get("bug_id"):
@@ -797,6 +802,7 @@ def answer_question(
         and lookup_answer
         and predicted_intent in RELEASE_QWEN_INTENTS
         and not is_no_workaround_answer(lookup_answer)
+        and not QWEN_FINALIZE_ALL_RESPONSES
     ):
         if _should_use_release_qwen(predicted_intent, lookup_status, lookup_answer, 1.0, cleaned_question):
             prompt = build_prompt(

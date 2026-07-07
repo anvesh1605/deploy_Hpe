@@ -6,11 +6,14 @@ if (savedTheme) {
 const ACTIVE_CONVERSATION_KEY = "aruba-qa-active-conversation";
 const API_BASE_URL = (() => {
   const metaBase = document.querySelector('meta[name="api-base-url"]')?.content || "";
+  const queryParams = new URLSearchParams(window.location.search);
   const globalBase =
     window.__ARUBA_API_BASE_URL__ ||
     window.__API_BASE_URL__ ||
     "";
-  return String(globalBase || metaBase || "").trim().replace(/\/+$/, "");
+  const storageBase = localStorage.getItem("aruba-qa-api-base-url") || "";
+  const queryBase = queryParams.get("api-base-url") || queryParams.get("api_base_url") || "";
+  return String(globalBase || metaBase || storageBase || queryBase || "").trim().replace(/\/+$/, "");
 })();
 
 const state = {
@@ -447,10 +450,19 @@ function applyConversationContext(conversation) {
 
 async function apiJson(url, options = {}) {
   const resolvedUrl = API_BASE_URL ? new URL(url, `${API_BASE_URL}/`).toString() : url;
-  const response = await fetch(resolvedUrl, {
-    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-    ...options,
-  });
+  let response;
+  try {
+    response = await fetch(resolvedUrl, {
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options,
+    });
+  } catch (error) {
+    throw new Error(
+      API_BASE_URL
+        ? `Unable to reach backend at ${API_BASE_URL}`
+        : "Unable to reach the local backend from this page. If you are using ngrok, set the backend API URL for this page."
+    );
+  }
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     throw new Error(`${resolvedUrl} failed: ${response.status} ${detail}`.trim());

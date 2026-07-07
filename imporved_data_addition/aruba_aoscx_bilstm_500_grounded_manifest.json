@@ -1,0 +1,14 @@
+{
+  "file": "/mnt/data/aruba_aoscx_bilstm_500_grounded.jsonl",
+  "row_count": 500,
+  "counts_by_intent": {
+    "version_support": 342,
+    "concept_explanation": 33,
+    "support_matrix": 125
+  },
+  "source_urls": [
+    "https://arubanetworking.hpe.com/techdocs/AOS-CX/Consolidated_RNs/Portal_Home/Content/cx-home.htm",
+    "https://arubanetworking.hpe.com/techdocs/ArubaDocPortal/content/new-portal/aoscx.html"
+  ],
+  "note": "Rows are generated only from facts present on the two portal pages; unsupported intents such as CLI syntax/output, route scale, procedures, event IDs, and bug details were not generated from these sources."
+}

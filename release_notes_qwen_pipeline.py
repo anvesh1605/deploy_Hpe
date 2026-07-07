@@ -362,11 +362,18 @@ def is_bad_syntax_artifact(text: str, expected_command: str = "") -> bool:
     candidate = _clean_markdown_text(_prompt_safe_text(text))
     if not candidate:
         return True
+    toc_like_block = bool(
+        re.search(r"(?mi)^\s*\d{1,4}\s+[A-Za-z][A-Za-z0-9._/-]*(?:\s+[A-Za-z][A-Za-z0-9._/-]*){0,10}\s*\.{4,}\s*\d{1,4}\s*$", candidate)
+        or (candidate.count("...") >= 2 and len(re.findall(r"\b\d{3,4}\b", candidate)) >= 3)
+        or len(re.findall(r"\b(?:show|no|clear|ip|ipv6|interface|vlan|bfd|redundancy|aaa|erps|mdns-sd)\b", candidate, flags=re.IGNORECASE)) >= 4
+        and len(re.findall(r"\b\d{3,4}\b", candidate)) >= 2
+    )
     had_artifact = bool(
         re.search(r"\.{8,}", candidate)
         or candidate.startswith(".")
         or re.search(r"\b(?:page|pg)\s*\d+\b", candidate, flags=re.IGNORECASE)
         or re.search(r"\b\d{1,4}\s+[A-Za-z][A-Za-z0-9._/-]*(?:\s+[A-Za-z][A-Za-z0-9._/-]*){0,7}\b", candidate)
+        or toc_like_block
     )
     cleaned = clean_cli_syntax(candidate)
     if not cleaned:
@@ -578,6 +585,7 @@ def format_cli_syntax_answer(question: str, lookup_answer: str, metadata: Dict[s
     syntax_candidate = clean_cli_syntax(syntax_text or _extract_cli_syntax(lookup_answer, command))
     bad_syntax = is_bad_syntax_artifact(syntax_candidate or lookup_answer, command)
     syntax_text = "" if bad_syntax else syntax_candidate
+    fallback_message = "I found related documentation, but not a reliable exact syntax match."
 
     if is_command_purpose_question(cleaned_question):
         if purpose_text and _looks_like_purpose_text(purpose_text) and purpose_text.lower() != syntax_text.lower():
@@ -594,7 +602,7 @@ def format_cli_syntax_answer(question: str, lookup_answer: str, metadata: Dict[s
 
         syntax_only = syntax_text or clean_cli_syntax(_extract_cli_syntax(lookup_answer) or lookup_answer)
         if not syntax_text and not _looks_like_purpose_text(purpose_text or ""):
-            return _clean_markdown_text(lookup_answer)
+            return _clean_markdown_text(fallback_message)
         if command:
             return _clean_markdown_text(
                 f"I found the syntax for `{command}`, but the retrieved documentation did not provide a direct purpose description.\n\n"
@@ -608,8 +616,10 @@ def format_cli_syntax_answer(question: str, lookup_answer: str, metadata: Dict[s
         cleaned_lookup = clean_cli_syntax(lookup_answer)
         if cleaned_lookup and not is_bad_syntax_artifact(cleaned_lookup, command):
             return _clean_markdown_text(f"**Syntax**\n\n```text\n{cleaned_lookup}\n```")
-    if purpose_text:
+    if purpose_text and not bad_syntax:
         return _clean_markdown_text(purpose_text)
+    if bad_syntax:
+        return _clean_markdown_text(fallback_message)
     return _clean_markdown_text(lookup_answer)
 
 
@@ -921,11 +931,12 @@ def _cleanup_formatted_answer(answer: str) -> str:
     return cleaned.strip()
 
 
-def encode_prompt(tokenizer, prompt: str):
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}]
+def encode_prompt(tokenizer, prompt: str, system_prompt: Optional[str] = None):
+    active_system_prompt = system_prompt or SYSTEM_PROMPT
+    messages = [{"role": "system", "content": active_system_prompt}, {"role": "user", "content": prompt}]
     if hasattr(tokenizer, "apply_chat_template"):
         return tokenizer.apply_chat_template(messages, return_tensors="pt", add_generation_prompt=True)
-    return tokenizer(f"{SYSTEM_PROMPT}\n\n{prompt}", return_tensors="pt").input_ids
+    return tokenizer(f"{active_system_prompt}\n\n{prompt}", return_tensors="pt").input_ids
 
 
 def generate_qwen_answer(
@@ -935,8 +946,9 @@ def generate_qwen_answer(
     intent: str,
     device: torch.device,
     data_family: str = "release_notes",
+    system_prompt: Optional[str] = None,
 ) -> str:
-    encoded = encode_prompt(tokenizer, prompt)
+    encoded = encode_prompt(tokenizer, prompt, system_prompt=system_prompt)
     if isinstance(encoded, torch.Tensor):
         input_ids = encoded
     elif isinstance(encoded, dict):

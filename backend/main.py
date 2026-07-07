@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backend.config import ALLOWED_ORIGINS, CHAT_CONVERSATIONS_PATH, FRONTEND_DIR, PORT  # noqa: E402
+from backend.config import ALLOWED_ORIGINS, ALLOWED_ORIGIN_REGEX, CHAT_CONVERSATIONS_PATH, FRONTEND_DIR, PORT  # noqa: E402
 from backend.conversations import ConversationStore  # noqa: E402
 from backend.runtime import AnswerService  # noqa: E402
 
@@ -24,7 +24,7 @@ class ChatRequest(BaseModel):
     question: str
     session_id: Optional[str] = None
     conversation_id: Optional[str] = None
-    domain: str = Field(default="auto", description="auto, release, or product")
+    domain: str = Field(default="auto", description="auto, release, product, or unified")
     selected_switch: str = ""
     selected_version: str = ""
     selected_sub_version: str = ""
@@ -53,6 +53,7 @@ app = FastAPI(title="Aruba QA Local Backend", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

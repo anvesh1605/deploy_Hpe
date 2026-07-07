@@ -1,0 +1,51 @@
+{
+  "extra_file": "/mnt/data/aruba_aoscx_bilstm_balanced_extra_1020_nodup.jsonl",
+  "merged_file": "/mnt/data/aruba_aoscx_bilstm_balanced_2040_merged.jsonl",
+  "previous_file": "/mnt/data/aruba_aoscx_bilstm_balanced_1020.jsonl",
+  "extra_row_count": 1020,
+  "merged_row_count": 2040,
+  "counts_by_intent_extra": {
+    "bug_category": 60,
+    "bug_symptom": 60,
+    "bug_workaround": 60,
+    "capacity_or_scale": 60,
+    "cli_output": 60,
+    "cli_syntax": 60,
+    "concept_explanation": 60,
+    "configuration_procedure": 60,
+    "event_id_action": 60,
+    "event_id_meaning": 60,
+    "limitation": 60,
+    "product_caveat": 60,
+    "requirement": 60,
+    "snmp_mib_info": 60,
+    "support_matrix": 60,
+    "troubleshooting": 60,
+    "version_support": 60
+  },
+  "counts_by_intent_merged": {
+    "bug_category": 120,
+    "bug_symptom": 120,
+    "bug_workaround": 120,
+    "capacity_or_scale": 120,
+    "cli_output": 120,
+    "cli_syntax": 120,
+    "concept_explanation": 120,
+    "configuration_procedure": 120,
+    "event_id_action": 120,
+    "event_id_meaning": 120,
+    "limitation": 120,
+    "product_caveat": 120,
+    "requirement": 120,
+    "snmp_mib_info": 120,
+    "support_matrix": 120,
+    "troubleshooting": 120,
+    "version_support": 120
+  },
+  "deduplication": {
+    "duplicate_input_text_against_previous": 0,
+    "duplicate_input_text_inside_extra": 0,
+    "note": "Target values can repeat because the same grounded fact can have multiple valid question phrasings. Exact input_text is not repeated."
+  },
+  "source_basis": "Same verified-source fact set as the previous 1020-row file; this file adds non-duplicate question phrasings for BiLSTM robustness."
+}

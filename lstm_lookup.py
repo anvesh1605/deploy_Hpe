@@ -104,6 +104,7 @@ def extract_switch_version_slots(question: str) -> Dict[str, str]:
 
     patterns = [
         rf"\b(?:For\s+)?(?P<switch>{SWITCH_MODEL_PATTERN})\s+Switch\s+Series\s+(?:running\s+)?AOS-CX\s+(?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<sub>\d+))?\b",
+        rf"\b(?:For\s+)?(?:an?\s+|the\s+)?(?:Aruba\s+)?(?P<switch>{SWITCH_MODEL_PATTERN})\s+switch(?:\s+series)?\s+(?:running\s+|in\s+)?AOS-CX\s+(?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<sub>\d+))?\b",
         rf"\b(?:For\s+)?(?:an?\s+|the\s+)?(?P<switch>{SWITCH_MODEL_PATTERN})\s+(?:Switch\s+Series\s+)?(?:running\s+)?AOS-CX\s+(?P<major>\d+)\.(?P<minor>\d+)(?:\.(?P<sub>\d+))?\b",
     ]
     for pattern in patterns:
@@ -147,6 +148,54 @@ def extract_category(question: str) -> str:
 
 def extract_question_type(question: str) -> str:
     text = normalize_whitespace(question).lower()
+    if any(
+        phrase in text
+        for phrase in (
+            "what is the syntax",
+            "what is the cli syntax",
+            "syntax of",
+            "command syntax",
+            "show syntax",
+            "cli syntax for",
+        )
+    ):
+        return "cli_syntax"
+    if any(
+        phrase in text
+        for phrase in (
+            "what is the output of",
+            "show me the output of",
+            "output of the",
+            "what does the output of",
+        )
+    ):
+        return "cli_output"
+    if any(
+        phrase in text
+        for phrase in (
+            "supported route scale",
+            "maximum supported route scale",
+            "route scale",
+            "route capacity",
+            "maximum route scale",
+            "supported scale",
+        )
+    ):
+        return "capacity_or_scale"
+    if "since which version" in text or "since what version" in text or re.search(r"\bversion\b.*\bsupport", text):
+        return "version_support"
+    if any(
+        phrase in text
+        for phrase in (
+            "which aos-cx switches support",
+            "which switch supports",
+            "support matrix",
+            "support vsf",
+            "support vsx",
+            "support issu",
+        )
+    ):
+        return "support_matrix"
     if "limitation" in text:
         return "limitation"
     if "requirement" in text:
@@ -159,6 +208,9 @@ def extract_question_type(question: str) -> str:
 def extract_feature(question: str) -> str:
     text = normalize_whitespace(question)
     patterns = [
+        r"\bwhich\s+(?:aos-cx\s+)?switch(?:es)?\s+support\s+(?P<feature>.+?)(?:[?!.]?$)",
+        r"\bsince\s+which\s+version\s+does\s+(?:the\s+)?(?:Aruba\s+)?(?:\d{4,5}[A-Za-z]?|CX\d{4})\s+support\s+(?P<feature>.+?)(?:[?!.]?$)",
+        r"\bwhat\s+does\s+(?:the\s+)?(?:\d{4,5}[A-Za-z]?|CX\d{4})\s+support\s+(?P<feature>.+?)(?:[?!.]?$)",
         r"\bwhat\s+caveat\s+is\s+documented\s+for\s+(?P<feature>.+?)(?:[?!.]?$)",
         r"\bwhat\s+limitation\s+is\s+mentioned\s+for\s+(?P<feature>.+?)(?:[?!.]?$)",
         r"\bwhat\s+is\s+the\s+caveat\s+related\s+to\s+(?P<feature>.+?)(?:[?!.]?$)",

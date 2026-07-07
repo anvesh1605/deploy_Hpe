@@ -26,6 +26,18 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None or not value.strip():
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "y", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "n", "off"}:
+        return False
+    return default
+
+
 def _default_allowed_origins() -> list[str]:
     return [
         "http://localhost:5173",
@@ -33,6 +45,17 @@ def _default_allowed_origins() -> list[str]:
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+
+
+def _default_allowed_origin_regex() -> str:
+    return (
+        r"^(https?://(localhost|127\.0\.0\.1)(:\d+)?"
+        r"|https://.*\.ngrok-free\.app"
+        r"|https://.*\.ngrok\.app"
+        r"|https://.*\.ngrok\.io"
+        r"|https://.*\.trycloudflare\.com"
+        r")$"
+    )
 
 
 def _resolve_model_file(model_dir: Path, filename: str = "best_model.pt") -> Path:
@@ -48,6 +71,7 @@ RELEASE_NOTES_DATA_DIR = _env_path("RELEASE_NOTES_DATA_DIR", DATA_ROOT / "Releas
 PRODUCT_DOCS_DATA_DIR = _env_path("PRODUCT_DOCS_DATA_DIR", DATA_ROOT / "product_docs_final_repaired")
 RELEASE_LSTM_DATA_DIR = _env_path("RELEASE_LSTM_DATA_DIR", ROOT / "outputs_release_lstm" / "all_switches")
 PRODUCT_LSTM_DATA_DIR = _env_path("PRODUCT_LSTM_DATA_DIR", ROOT / "outputs_product_lstm" / "all_switches")
+UNIFIED_LSTM_MODEL_DIR = _env_path("UNIFIED_LSTM_MODEL_DIR", ROOT / "models" / "bilstm_unified_v2")
 
 QWEN_MODEL_DIR = _env_path(
     "QWEN_MODEL_DIR",
@@ -62,6 +86,7 @@ RELEASE_LOOKUP_DATA_PATH = RELEASE_NOTES_DATA_DIR
 
 RELEASE_LSTM_MODEL_PATH = _resolve_model_file(RELEASE_LSTM_MODEL_DIR)
 PRODUCT_LSTM_MODEL_PATH = _resolve_model_file(PRODUCT_LSTM_MODEL_DIR)
+UNIFIED_LSTM_MODEL_PATH = _resolve_model_file(UNIFIED_LSTM_MODEL_DIR)
 
 RELEASE_LOOKUP_INDEX_PATH = _env_path("RELEASE_LSTM_DATA_DIR", RELEASE_LSTM_DATA_DIR) / "lookup_index.json"
 RELEASE_BUG_METADATA_PATH = _env_path("RELEASE_LSTM_DATA_DIR", RELEASE_LSTM_DATA_DIR) / "bug_metadata_index.json"
@@ -71,6 +96,13 @@ RELEASE_AVAILABILITY_PATH = _env_path("RELEASE_LSTM_DATA_DIR", RELEASE_LSTM_DATA
 def _collect_product_lookup_paths(data_root: Path) -> list[Path]:
     paths = [path for path in data_root.rglob("product_dataset_repaired.jsonl") if path.is_file()]
     paths.extend(path for path in data_root.rglob("product_review_remaining.jsonl") if path.is_file())
+    synthetic_root = ROOT / "imporved_data_addition"
+    if synthetic_root.exists():
+        paths.extend(
+            path
+            for path in synthetic_root.rglob("aruba_aoscx_bilstm_balanced_*_merged.jsonl")
+            if path.is_file()
+        )
     unique: list[Path] = []
     seen: set[Path] = set()
     for path in sorted(paths):
@@ -92,4 +124,6 @@ ALLOWED_ORIGINS = [
     for origin in _env_text("ALLOWED_ORIGINS", ",".join(_default_allowed_origins())).split(",")
     if origin.strip()
 ]
+ALLOWED_ORIGIN_REGEX = _env_text("ALLOWED_ORIGIN_REGEX", _default_allowed_origin_regex())
 PORT = _env_int("PORT", 8000)
+QWEN_FINALIZE_ALL_RESPONSES = _env_bool("QWEN_FINALIZE_ALL_RESPONSES", True)
